@@ -67,7 +67,7 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	    aff.operat,
 	    'STL'
 	FROM oca1032s_affectation_2015 aff
-	WHERE typstd LIKE 'STL'
+	WHERE typstd LIKE 'STL';
 
 	DELETE FROM oca1032s_affectation_2015 
 	WHERE typstd LIKE 'STL';
