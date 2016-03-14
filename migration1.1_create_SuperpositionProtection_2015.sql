@@ -19,7 +19,7 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	    aff.shape_area,
 	    aff.remarq,
 	    aff.operat,
-	    'ZSPNP'
+	    'ZPP'
 	FROM oca1032s_affectation_2015 aff
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT = 'PAY';
@@ -41,7 +41,7 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	    aff.shape_area,
 	    aff.remarq,
 	    aff.operat,
-	    'ZSPNP'
+	    'ZPN'
 	FROM oca1032s_affectation_2015 aff
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT = 'NAT';
@@ -49,6 +49,27 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	DELETE FROM oca1032s_affectation_2015 
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT LIKE 'NAT';
+
+
+	/*ON CREE UN SECTEUR DE PROTECTION PADIV (P√©rim√®tre d'agriculture diversifi√©e) √† l'endroit ou se situait les anciennes 
+	zone PADIV*/
+
+	INSERT INTO superpositionprotection (geom,nufeco,nosect,lieu,publieedep,statutjuri,shape_leng,shape_area,remarques,operateur,typsupprot)
+	SELECT aff.geom,
+	    aff.nufeco,
+	    aff.nosect,
+	    aff.lieu,
+	    aff.publieedepuis,
+	    aff.statutjuridique,
+	    aff.shape_leng,
+	    aff.shape_area,
+	    aff.remarq,
+	    aff.operat,
+	    'ZPN'
+	FROM oca1032s_affectation_2015 aff
+	WHERE typstd LIKE 'PADIV'
+
+	-- ICI on ne supprime pas la ZONE, elle est simplement transform√© en ZA
 	
 	/* OPTION: AJOUTER UN ATTRIBUT ZONEouSUPERPOS AFIN 
 	DE POUVOIR DETERMINER l'APPARTENANCE DE CHAQUE POLYGON A 
