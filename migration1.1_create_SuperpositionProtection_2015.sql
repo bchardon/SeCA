@@ -19,14 +19,16 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	    aff.shape_area,
 	    aff.remarq,
 	    aff.operat,
-	    'ZPP'
+	    'PPP'
 	FROM oca1032s_affectation_2015 aff
-	WHERE typstd LIKE 'ZP%'
-	AND TYPPROT = 'PAY';
+	WHERE (typstd LIKE 'ZP%'
+	AND TYPPROT = 'PAY')
+	OR typstd LIKE 'ZPP';
 	
 	DELETE FROM oca1032s_affectation_2015 
-	WHERE typstd LIKE 'ZP%'
-	AND TYPPROT LIKE 'PAY';
+	WHERE (typstd LIKE 'ZP%'
+	AND TYPPROT = 'PAY')
+	OR typstd LIKE 'ZPP';
 
 	-- DELETE les ROW ou TYPSTD = ZP* et TYPPROT = 'NAT' ET LES PLACE DANS SECTEUR SUPERPOSE.
 	
@@ -41,7 +43,7 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	    aff.shape_area,
 	    aff.remarq,
 	    aff.operat,
-	    'ZPN'
+	    'PPN'
 	FROM oca1032s_affectation_2015 aff
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT = 'NAT';
@@ -49,6 +51,26 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	DELETE FROM oca1032s_affectation_2015 
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT LIKE 'NAT';
+
+	-- DELETE les ROW ou TYPSTD = SPL et les places dans un SECTEUR SUPERPOSE de tourisme et loisir (STL).
+	
+	INSERT INTO superpositionprotection (geom,nufeco,nosect,lieu,publieedep,statutjuri,shape_leng,shape_area,remarques,operateur,typsupprot)
+	SELECT aff.geom,
+	    aff.nufeco,
+	    aff.nosect,
+	    aff.lieu,
+	    aff.publieedepuis,
+	    aff.statutjuridique,
+	    aff.shape_leng,
+	    aff.shape_area,
+	    aff.remarq,
+	    aff.operat,
+	    'STL'
+	FROM oca1032s_affectation_2015 aff
+	WHERE typstd LIKE 'STL'
+
+	DELETE FROM oca1032s_affectation_2015 
+	WHERE typstd LIKE 'STL';
 
 
 	/*ON CREE UN SECTEUR DE PROTECTION PADIV (P√©rim√®tre d'agriculture diversifi√©e) √† l'endroit ou se situait les anciennes 
@@ -67,7 +89,7 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	    aff.operat,
 	    'PADIV'
 	FROM oca1032s_affectation_2015 aff
-	WHERE typstd LIKE 'PADIV'
+	WHERE typstd LIKE 'PADIV';
 
 	-- ICI on ne supprime pas la ZONE, elle est simplement transform√© en ZA
 	

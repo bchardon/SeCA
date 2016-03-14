@@ -33,11 +33,29 @@
 
 	UPDATE oca1032s_affectation_2015
 	SET TYPSTD_2015 = 'ZTL'
-	WHERE TYPSTD = 'ZC'
+	WHERE TYPSTD = 'ZC';
+
+-- PADIV devient ZA + Un perimètre de protection PADIV
 
 	UPDATE oca1032s_affectation_2015
 	SET TYPSTD_2015 = 'ZA'
-	WHERE TYPSTD = 'PADIV' 
+	WHERE TYPSTD = 'PADIV';
+
+
+-- LA QUERY SUIVANTE POURRAIT AUSSI ETRE PLACE DANS le fichier SQL 1.1
+-- et ne pas renommer les zones mais les sortir en superposition.
+
+	UPDATE oca1032s_affectation_2015
+	SET TYPSTD_2015 = 'ZPCE'
+	WHERE TYPSTD = 'ZPCE' 
+	OR (TYPSTD = 'ZP' AND TYPPROT = 'EAU');
+
+-- ZPBC devient ZCP (A discuter) mais je pense qu'ici ça doit rester une affectation
+-- primaire
+
+	UPDATE oca1032s_affectation_2015
+	SET TYPSTD_2015 = 'ZPBC'
+	WHERE TYPSTD = 'ZCP';	
 	
 
 	/*UNE FOIS LE PROCESSUS TERMINE DE COPIE/TRANSFORMATION/EXTRACTION/SUPPRESSION du TYPSTD
