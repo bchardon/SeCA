@@ -3,7 +3,7 @@
 	SELECT * 
 	INTO oca1032s_affectation_2015
 	FROM oca1032s_affectation_com;
-
+	
 	ALTER TABLE oca1032s_affectation_2015 
 	DROP COLUMN ZPAD, 
 	DROP COLUMN ZPED, 

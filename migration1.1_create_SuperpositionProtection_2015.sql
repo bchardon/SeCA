@@ -1,4 +1,6 @@
 ﻿/*CREATION DU NOUVEAU LAYER SuperpositionProtection
+LES ZONE dont les TYPPROT sont 'NAT' ou 'PAY' peuvent être en grande partie être transféré en perimètre superposé. Mais certaines zones devront peut être rester
+dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajouté afin de pouvoir choisir les zones de protection qui devront rester en zone de protection.
 */
 
 
@@ -17,11 +19,11 @@
 	    aff.shape_area,
 	    aff.remarq,
 	    aff.operat,
-	    'ZPP'
+	    'ZSPNP'
 	FROM oca1032s_affectation_2015 aff
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT = 'PAY';
-
+	
 	DELETE FROM oca1032s_affectation_2015 
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT LIKE 'PAY';
@@ -39,7 +41,7 @@
 	    aff.shape_area,
 	    aff.remarq,
 	    aff.operat,
-	    'ZPN'
+	    'ZSPNP'
 	FROM oca1032s_affectation_2015 aff
 	WHERE typstd LIKE 'ZP%'
 	AND TYPPROT = 'NAT';
@@ -51,9 +53,14 @@
 	/* OPTION: AJOUTER UN ATTRIBUT ZONEouSUPERPOS AFIN 
 	DE POUVOIR DETERMINER l'APPARTENANCE DE CHAQUE POLYGON A 
 	UNE ZONE OU UN CONTENU SUPERPOSE */
-	
-	ALTER TABLE superpositionprotection 
-	ADD COLUMN ZONEouSUPERPOS character varying(6);
 
-	
+	DO $$ 
+	    BEGIN
+		BEGIN
+		    ALTER TABLE superpositionprotection ADD COLUMN ZONEouSUPERPOS character varying(6);
+		EXCEPTION
+		    WHEN duplicate_column THEN RAISE NOTICE 'column ZONEouSUPERPOS already exists in superpositionprotection.';
+		END;
+	    END;
+	$$
 	
