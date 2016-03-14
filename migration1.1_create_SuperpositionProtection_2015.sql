@@ -65,7 +65,7 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout√
 	    aff.shape_area,
 	    aff.remarq,
 	    aff.operat,
-	    'ZPN'
+	    'PADIV'
 	FROM oca1032s_affectation_2015 aff
 	WHERE typstd LIKE 'PADIV'
 

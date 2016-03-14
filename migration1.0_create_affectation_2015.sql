@@ -22,10 +22,22 @@
 	UPDATE oca1032s_affectation_2015
 	SET TYPSTD_2015 = TYPSTD
 	WHERE TYPSTD IN ('ZA','ZACT','ZG','ZIG','ZL','ZM','ZRFD','ZRMD','ZRHD','ZRS','ZV','ZVI');
-	
+
+
+-- 	LE CAS du TYPSTD = F (Aire FORESTIERE) est traité à part dans le mesure ou ces aires forestières devront
+--	être complété (à l'aide du SFF par exemple)
+
 	UPDATE oca1032s_affectation_2015
 	SET TYPSTD_2015 = 'F'
 	WHERE TYPSTD = 'F';
+
+	UPDATE oca1032s_affectation_2015
+	SET TYPSTD_2015 = 'ZTL'
+	WHERE TYPSTD = 'ZC'
+
+	UPDATE oca1032s_affectation_2015
+	SET TYPSTD_2015 = 'ZA'
+	WHERE TYPSTD = 'PADIV' 
 	
 
 	/*UNE FOIS LE PROCESSUS TERMINE DE COPIE/TRANSFORMATION/EXTRACTION/SUPPRESSION du TYPSTD
