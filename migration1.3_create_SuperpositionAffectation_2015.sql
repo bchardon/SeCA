@@ -14,6 +14,7 @@ SELECT sp.crea_date,
 	
 FROM 	oca8030t_suivipal_pad sp, 
 	oca8030s_suivipal_pad ssp
-WHERE ssp.pad_id = sp.id_pad;
+WHERE ssp.pad_id = sp.id_pad
+AND sp.id_pad IS NOT NULL;
 
 

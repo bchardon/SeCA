@@ -92,7 +92,54 @@ dans le plan d'affectation. C'est pourquoi une colonne ZONEouSUPERPOS est ajout�
 	WHERE typstd LIKE 'PADIV';
 
 	-- ICI on ne supprime pas la ZONE, elle est simplement transformé en ZA
-	
+	-- (le changement est effectué dans la query 1.0)
+
+
+	/*ON CREE UN SECTEUR DE PROTECTION ARCHEOLOGIQUE si la mention périmètre archéologique 
+	figure dans le champ remarque*/
+
+	INSERT INTO superpositionprotection (geom,nufeco,nosect,lieu,publieedep,statutjuri,shape_leng,shape_area,remarques,operateur,typsupprot)
+	SELECT aff.geom,
+	    aff.nufeco,
+	    aff.nosect,
+	    aff.lieu,
+	    aff.publieedepuis,
+	    aff.statutjuridique,
+	    aff.shape_leng,
+	    aff.shape_area,
+	    aff.remarq,
+	    aff.operat,
+	    'PA'
+	FROM oca1032s_affectation_com 
+	WHERE lower(remarq) like '%archäo%' 
+	OR lower(remarq) like '%archéo%';
+
+
+
+
+/*ON CREE UN SECTEUR DE PROTECTION DU SITE CONSTRUIT si la mention périmètre de protection du site construit 
+	figure dans le champ remarque*/
+
+	INSERT INTO superpositionprotection (geom,nufeco,nosect,lieu,publieedep,statutjuri,shape_leng,shape_area,remarques,operateur,typsupprot)
+	SELECT aff.geom,
+	    aff.nufeco,
+	    aff.nosect,
+	    aff.lieu,
+	    aff.publieedepuis,
+	    aff.statutjuridique,
+	    aff.shape_leng,
+	    aff.shape_area,
+	    aff.remarq,
+	    aff.operat,
+	    'PPC'
+	FROM oca1032s_affectation_com 
+	WHERE lower(remarq) like '%protection%'
+	AND lower(remarq) like '%site%'; 
+	-- Attention ici vu que la 
+
+
+ 
+
 	/* OPTION: AJOUTER UN ATTRIBUT ZONEouSUPERPOS AFIN 
 	DE POUVOIR DETERMINER l'APPARTENANCE DE CHAQUE POLYGON A 
 	UNE ZONE OU UN CONTENU SUPERPOSE */
