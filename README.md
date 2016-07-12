@@ -6,5 +6,7 @@ Ce dossier contient les requêtes SQL, ainsi que l'équivalent FME, qui permette
 Trois couches d'informations sont créées par le processus:
 
 `SR15.shp` Les polygones de surfaces résidentielle construite au cours des 15 dernières années.
+
 `SRL.shp` Les polygones de surface résidentielle libre (non bâti)
+
 `COMMUNE.shp` Les frontières communales, ainsi que la somme des aires de SR15 et SRL par commune.
