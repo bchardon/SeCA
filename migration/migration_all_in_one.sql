@@ -319,6 +319,8 @@ FROM affectation_com_old
 WHERE (lower(REMARQ) LIKE '%spez%'
        OR lower(REMARQ) LIKE '%presc%'
        OR lower(REMARQ) LIKE '%présc%'
+       OR lower(REMARQ) LIKE '%prescr%'
+       OR lower(REMARQ) LIKE '%prescri%'
        OR lower(REMARQ) LIKE '%partic%'
        OR lower(REMARQ) LIKE '%bestim%')
 AND lower(REMARQ) NOT LIKE '%mesures partic%'
@@ -405,29 +407,14 @@ SELECT aff.geom,
        695
 FROM affectation_com_new aff
 WHERE lower(remarques) LIKE '%archäo%'
+  OR lower(remarques) LIKE '%achäo%'
   OR lower(remarques) LIKE '%archéo%'
+  OR lower(remarques) LIKE '%achéolo%'
   OR (typstd = 'ZP'
       AND typprot = 'ARCH');
 
 
--- On supprime les polygones de la couche affectation_com qui ne sont plus utiles:
 
-DELETE
-FROM affectation_com_new
-WHERE typstd LIKE 'PHR';
-
-DELETE
-FROM affectation_com_new
-WHERE typstd LIKE 'STL';
-
-DELETE
-FROM affectation_com_new
-WHERE typstd LIKE 'PHM';
-
-DELETE
-FROM affectation_com_new
-WHERE (typstd = 'ZP'
-       AND typprot = 'ARCH');
 
 -- on ajoute un ID.
 ALTER TABLE superposition_affectation  
@@ -630,8 +617,13 @@ SELECT aff.geom,
        concat_ws('_',fosnr,'511'),
        511
 FROM affectation_com_new aff
-WHERE lower(remarques) LIKE '%protection%'
-  AND (lower(remarques) LIKE '%site%' OR lower(remarques) LIKE '%siite%'); -- Attention ici vu que la selection est relativement souple il se peut (même si peu probable) que des périmètres de protection du site construit soit créer à tord.
+WHERE (lower(remarques) LIKE '%protection%'
+  AND (lower(remarques) LIKE '%site%' OR lower(remarques) LIKE '%siite%'))
+  OR (lower(remarques) LIKE '%site%' AND lower(remarques) LIKE '%protég%')
+  OR (lower(remarques) LIKE '%bâti%' AND lower(remarques) LIKE '%conserver%')
+  OR lower(remarques) LIKE '%ortsbild%'
+  OR lower(remarques) LIKE '%orstbild%'
+  OR (lower(remarques) like '%périmètre d''implantation%' AND typstd not like 'PHR'); -- Attention ici vu que la selection est relativement souple il se peut (même si peu probable) que des périmètres de protection du site construit soit créer à tord.
 
  /* CETTE PARTIE FUSIONNE LES POLYGONES ADJACENT PARTAGEANT LE MÊME TYPE DE PROTECTION + MEME FOSNR + MEME REMARQUES (car un même type de protection peut faire référence à différents articles RCU)*/ -- La fonction "remplie" les trous dans les polygons, si le trou est inférieur à $2 m^2.
 
@@ -1196,6 +1188,26 @@ ALTER TABLE zone_comm_new ALTER COLUMN niveauhg   TYPE double precision using ni
 ALTER TABLE zone_comm_new ALTER COLUMN niveauhc   TYPE double precision using niveauhc::double precision;
 ALTER TABLE zone_comm_new ALTER COLUMN niveauautr TYPE double precision using niveauautr::double precision;
 
+-- On supprime les polygones de la couche affectation_com qui ne sont plus utiles:
+
+DELETE
+FROM affectation_com_new
+WHERE typstd LIKE 'PHR';
+
+DELETE
+FROM affectation_com_new
+WHERE typstd LIKE 'STL';
+
+DELETE
+FROM affectation_com_new
+WHERE typstd LIKE 'PHM';
+
+DELETE
+FROM affectation_com_new
+WHERE (typstd = 'ZP'
+       AND typprot = 'ARCH');
+
+
 DO LANGUAGE plpgsql $$ BEGIN RAISE NOTICE 'Fin de création zone_comm'; END $$;
 
  /* Dans le système actuel il n'y a pas de gestion des périmètres superposés: 
@@ -1232,23 +1244,40 @@ Le PAD est déjà vectorisé.
 
 	DROP TABLE IF EXISTS superposition_bruit;
 
+        -- Necessite de checker si il y a un declassement ou pas, plus pratique de rajouter un attribut sur affectation_old
+        ALTER TABLE affectation_com_old
+        DROP COLUMN IF EXISTS declass;
+        ALTER TABLE affectation_com_old 
+        ADD COLUMN declass integer;
+
+        UPDATE affectation_com_old
+        SET declass = 0;
+        
+        UPDATE affectation_com_old
+        SET declass = 1
+        WHERE gid in
+        (
+        select gid from affectation_com_old where remarq like '%declasss%' or remarq like '%déclass%'
+        );
+
+	-- on reprend
 	
 	CREATE TABLE superposition_bruit AS
-	SELECT sensible::smallint, (ST_DUMP(ST_Union(ST_SnapToGrid(ST_MakeValid(geom),0.0)))).geom
+	SELECT sensible::smallint, declassement, (ST_DUMP(ST_Union(ST_SnapToGrid(ST_MakeValid(geom),0.0)))).geom
 	FROM
 	(
-		SELECT a.sensiblesp::smallint as sensible,
+		SELECT a.sensiblesp::smallint as sensible, a.declass as declassement,
 		geom
 		FROM affectation_com_old a
 		WHERE a.sensiblesp <> 0 -- sensiblesp existe
 		UNION
-		SELECT b.sensible::smallint as sensible,
+		SELECT b.sensible::smallint as sensible, a.declass as declassement,
 		geom
 		FROM affectation_com_old a, zone_comm_old b
 		WHERE a.fosnr_zon = b.fosnr_zon
 		AND a.sensiblesp = 0 -- sensiblesp n'existe pas
 	) as T
-	group by sensible;
+	group by sensible, declassement;
 
 	DELETE
 	FROM superposition_bruit
@@ -1313,26 +1342,24 @@ Le PAD est déjà vectorisé.
 	UPDATE superposition_bruit
 	SET FOSNR = t1.FOSNR
 	FROM
-	  (SELECT c.FOSNR AS FOSNR,
-		  b.gid AS GID
-	   FROM oca8000s_suivipal_commune c,
-		superposition_bruit b
-	   WHERE st_intersects(c.geom,st_centroid(b.geom))
-	   ORDER BY b.gid) AS t1
+	(SELECT a.fosnr,b.gid from affectation_com_old a, superposition_bruit b
+	WHERE st_intersects(a.geom,st_pointonsurface(b.geom))
+	AND st_intersects(a.geom,b.geom)
+	) t1
 	WHERE superposition_bruit.gid = t1.gid;
 
 
 	UPDATE superposition_bruit
 	SET FOSNR_DEGRE = FOSNR || '_' || sensible::text;
 
-	 -- Ajout de déclassement
+	 /*-- Ajout de déclassement
 
 	ALTER TABLE superposition_bruit ADD COLUMN declassement integer;
 
 
 	UPDATE superposition_bruit
 	SET declassement = 0;
-
+	*/
 	-- On supprimer les secteurs qui découlent d'opérations foirée sur les données dont la largeur max n'exède pas 1.5m
 	
 	DELETE FROM superposition_bruit  
@@ -1343,10 +1370,32 @@ Le PAD est déjà vectorisé.
 	having st_area(ST_Buffer(ST_Buffer(geom,-1.5,'join=mitre'),1.5,'join=mitre')) < 1
 	);
 
+	-- DELETE les zones ou sensible == 0
 
+	DELETE FROM superposition_bruit 
+	where sensible = 0;
 
 
  DO LANGUAGE plpgsql $$ BEGIN RAISE NOTICE 'Fin de création superposition_bruit'; END $$;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
  /* Creation de la table disposition_commune */
 DROP TABLE IF EXISTS disposition_commune CASCADE;
@@ -1620,6 +1669,22 @@ FROM
 ) as T1
 WHERE T1.gid = affectation_com_new.gid;
 
+-- Mais si une zone affectation_com_new recouvre plus d'une zone affectation_com_old et que les zones recouvertes par une des nouvelles entitées possèdes des remarques différentes on supprime les remarques
+-- mieux vaut pas d'information que de l'information erronée sur une partie des zones
+
+UPDATE affectation_com_new SET remarque = null
+FROM
+(
+select a.gid,count(*) as newcount,regexp_replace(a.remarque, E'[\\n\\r]+', ' ', 'g' ), count(distinct coalesce(b.remarq,'0')) as oldcount from affectation_com_new a, affectation_com_old b
+where st_intersects(st_buffer(a.geom,-0.2),b.geom)
+and st_intersects(a.geom,b.geom)
+group by  a.gid, a.remarque
+order by newcount
+) t2 
+where affectation_com_new.gid = t2.gid
+and t2.newcount > 1
+and t2.oldcount > 1;
+
 -- On supprime la ZA issue de l'ancienne table affectation_com 
 
 DELETE FROM affectation_com_new WHERE typstd_2015 = 'ZA';
@@ -1628,6 +1693,7 @@ DELETE FROM affectation_com_new WHERE typstd_2015 = 'ZA';
 
 ALTER TABLE affectation_com_new
 RENAME typstd_2015 to typstd;
+
 -- On ajoute la référence spatial 
 
 ALTER TABLE affectation_com_new
@@ -1761,10 +1827,19 @@ DO LANGUAGE plpgsql $$ BEGIN RAISE NOTICE 'Fin Extraction des références aux R
 
 -- Pour une raison que j'ignore topoforms ne gère pas l'attribut FOSNR_CODE si il est sous la forme 2013_433, je dois donc bazarder l'underscore
 
-UPDATE DISPOSITION_AFFECTATION SET FOSNR_CODE =  replace(fosnr_code, '_', '');
-UPDATE DISPOSITION_PROTECTION SET FOSNR_CODE =  replace(fosnr_code, '_', '');
-UPDATE SUPERPOSITION_AFFECTATION SET FOSNR_CODE =  replace(fosnr_code, '_', '');
-UPDATE SUPERPOSITION_AFFECTATION SET FOSNR_CODE =  replace(fosnr_code, '_', '');
+UPDATE DISPOSITION_AFFECTATION SET FOSNR_CODE =  replace(fosnr_code, '_', '')::integer;
+UPDATE DISPOSITION_PROTECTION SET FOSNR_CODE =  replace(fosnr_code, '_', '')::integer;
+UPDATE SUPERPOSITION_AFFECTATION SET FOSNR_CODE =  replace(fosnr_code, '_', '')::integer;
+UPDATE SUPERPOSITION_PROTECTION SET FOSNR_CODE =  replace(fosnr_code, '_', '')::integer;
+
+-- SI length(operatuer) > 50 operateur = null
+UPDATE superposition_bruit SET operateur = '' 
+WHERE GID IN
+(
+select gid from superposition_bruit
+group by operateur, gid
+having octet_length(operateur) > 50
+);
 
 
 DO LANGUAGE plpgsql $$ BEGIN RAISE NOTICE 'Fin de la migration'; END $$;
